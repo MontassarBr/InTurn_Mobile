@@ -1,13 +1,28 @@
-const db = require("../config/db");
+// models/userModel.js
+const pool = require('../config/db');
 
-const createUser = (name, email, hashedPassword, callback) => {
-  const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-  db.query(sql, [name, email, hashedPassword], callback);
+// Create a new user (Student or Company)
+const createUser = async (username, email, hashedPassword, userType, location = null, description = null, profilePic = null) => {
+  const sql = `
+    INSERT INTO User (username, email, password, userType, location, description, profilePic)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+  const [result] = await pool.query(sql, [username, email, hashedPassword, userType, location, description, profilePic]);
+  return result;
 };
 
-const findUserByEmail = (email, callback) => {
-  const sql = "SELECT * FROM users WHERE email = ?";
-  db.query(sql, [email], callback);
+// Find user by email
+const findUserByEmail = async (email) => {
+  const sql = `SELECT * FROM User WHERE email = ?`;
+  const [rows] = await pool.query(sql, [email]);
+  return rows;
 };
 
-module.exports = { createUser, findUserByEmail };
+// Find user by ID 
+const findUserById = async (id) => {
+  const sql = `SELECT userID, username, email, userType, location, description, profilePic FROM User WHERE userID = ?`;
+  const [rows] = await pool.query(sql, [id]);
+  return rows;
+};
+
+module.exports = { createUser, findUserByEmail, findUserById };

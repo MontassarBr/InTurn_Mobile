@@ -1,27 +1,33 @@
-// app.js
-const express = require("express");       
-const dotenv = require("dotenv");          
-const db = require("./config/db");         
+const express = require("express");
+const dotenv = require("dotenv");
+const db = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
+const internshipRoutes = require("./routes/internshipRoutes");
 
-dotenv.config(); 
+
+dotenv.config();
 const app = express();
+
 app.use(express.json());
 
+// Routes
 app.use("/api/users", userRoutes);
+app.use("/api/internships", internshipRoutes); 
 
+// Base route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-
-db.connect((err) => {
-  if (err) {
+(async () => {
+  try {
+    await db.query("SELECT 1");
+    console.log("MySQL Connected (using pool)...");
+  } catch (err) {
     console.error("MySQL connection error:", err);
-    process.exit(1); 
+    process.exit(1);
   }
-  console.log("MySQL Connected...");
-});
+})();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
