@@ -1,14 +1,22 @@
 // routes/internshipRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createInternship, getAllInternships, getInternshipById, updateInternship, deleteInternship } = require('../controllers/internshipController');
-const { protect } = require('../middleware/authMiddleware'); 
+const {
+  createInternshipHandler,
+  getInternshipsHandler,
+  getInternshipByIdHandler,
+  updateInternshipHandler,
+  deleteInternshipHandler
+} = require('../controllers/internshipController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', getAllInternships);
-router.get('/:id', getInternshipById);
+// Public routes for students
+router.get('/', getInternshipsHandler);       
+router.get('/:id', getInternshipByIdHandler); 
 
-router.post('/', protect, createInternship);
-router.put('/:id', protect, updateInternship);
-router.delete('/:id', protect, deleteInternship);
+// Protected routes for companies
+router.post('/', protect, createInternshipHandler);
+router.put('/:id', protect, updateInternshipHandler);
+router.delete('/:id', protect, deleteInternshipHandler);
 
 module.exports = router;

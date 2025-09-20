@@ -1,3 +1,4 @@
+// models/internshipModel.js
 const pool = require('../config/db');
 
 // Create new internship
@@ -13,10 +14,36 @@ const createInternship = async (companyID, title, startDate, endDate, minSalary,
   return result;
 };
 
-// Get all internships
-const getAllInternships = async () => {
-  const sql = `SELECT * FROM Internship`;
-  const [rows] = await pool.query(sql);
+// Get internships with optional filters and pagination
+const getInternships = async (filters) => {
+  let sql = `SELECT * FROM Internship WHERE 1=1`; // 1=1 allows easy concatenation
+  const values = [];
+
+  // Filters
+  if (filters.location) {
+    sql += ` AND location = ?`;
+    values.push(filters.location);
+  }
+  if (filters.workTime) {
+    sql += ` AND workTime = ?`;
+    values.push(filters.workTime);
+  }
+  if (filters.workArrangement) {
+    sql += ` AND workArrangement = ?`;
+    values.push(filters.workArrangement);
+  }
+  if (filters.payment) {
+    sql += ` AND payment = ?`;
+    values.push(filters.payment);
+  }
+
+  // Pagination
+  const limit = parseInt(filters.limit) || 10;   // default 10 per page
+  const offset = parseInt(filters.offset) || 0;  // default start at 0
+  sql += ` LIMIT ? OFFSET ?`;
+  values.push(limit, offset);
+
+  const [rows] = await pool.query(sql, values);
   return rows;
 };
 
@@ -24,10 +51,10 @@ const getAllInternships = async () => {
 const getInternshipById = async (id) => {
   const sql = `SELECT * FROM Internship WHERE internshipID = ?`;
   const [rows] = await pool.query(sql, [id]);
-  return rows;
+  return rows[0]; // return single object instead of array
 };
 
-// Update internship (only company who owns it)
+// Update internship
 const updateInternship = async (id, data) => {
   const fields = [];
   const values = [];
@@ -53,7 +80,7 @@ const deleteInternship = async (id) => {
 
 module.exports = {
   createInternship,
-  getAllInternships,
+  getInternships,
   getInternshipById,
   updateInternship,
   deleteInternship

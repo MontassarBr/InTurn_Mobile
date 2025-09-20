@@ -1,8 +1,8 @@
 // controllers/internshipController.js
 const Internship = require('../models/internshipModel');
 
-// Create internship (only Company)
-const createInternship = async (req, res) => {
+// Company creates a new internship
+const createInternshipHandler = async (req, res) => {
   try {
     if (req.user.userType !== 'Company') {
       return res.status(403).json({ message: "Only companies can create internships" });
@@ -14,7 +14,11 @@ const createInternship = async (req, res) => {
       return res.status(400).json({ message: "Title, startDate, endDate, and location are required" });
     }
 
-    const result = await Internship.createInternship(req.user.id, title, startDate, endDate, minSalary, maxSalary, description, location, payment, workArrangement, workTime, 'Published');
+    const result = await Internship.createInternship(
+      req.user.userID, title, startDate, endDate, minSalary, maxSalary, description,
+      location, payment, workArrangement, workTime, 'Published'
+    );
+
     res.status(201).json({ message: "Internship created", internshipID: result.insertId });
   } catch (err) {
     console.error(err);
@@ -22,10 +26,20 @@ const createInternship = async (req, res) => {
   }
 };
 
-// Get all internships
-const getAllInternships = async (req, res) => {
+// Get internships (students) with optional filters and pagination
+const getInternshipsHandler = async (req, res) => {
   try {
-    const internships = await Internship.getAllInternships();
+    // Extract filters from query params
+    const filters = {
+      location: req.query.location,
+      workTime: req.query.workTime,
+      workArrangement: req.query.workArrangement,
+      payment: req.query.payment,
+      limit: req.query.limit,
+      offset: req.query.offset
+    };
+
+    const internships = await Internship.getInternships(filters);
     res.json(internships);
   } catch (err) {
     console.error(err);
@@ -33,31 +47,33 @@ const getAllInternships = async (req, res) => {
   }
 };
 
-// Get internship by ID
-const getInternshipById = async (req, res) => {
+// Get internship details by ID
+const getInternshipByIdHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const internship = await Internship.getInternshipById(id);
-    if (internship.length === 0) return res.status(404).json({ message: "Internship not found" });
-    res.json(internship[0]);
+
+    if (!internship) return res.status(404).json({ message: "Internship not found" });
+
+    res.json(internship);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Update internship (only company who owns it)
-const updateInternship = async (req, res) => {
+// Company updates internship
+const updateInternshipHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const internship = await Internship.getInternshipById(id);
-    if (internship.length === 0) return res.status(404).json({ message: "Internship not found" });
 
-    if (req.user.userType !== 'Company' || internship[0].companyID !== req.user.id) {
+    if (!internship) return res.status(404).json({ message: "Internship not found" });
+    if (req.user.userType !== 'Company' || internship.companyID !== req.user.userID) {
       return res.status(403).json({ message: "You can only update your own internships" });
     }
 
-    const result = await Internship.updateInternship(id, req.body);
+    await Internship.updateInternship(id, req.body);
     res.json({ message: "Internship updated" });
   } catch (err) {
     console.error(err);
@@ -65,14 +81,14 @@ const updateInternship = async (req, res) => {
   }
 };
 
-// Delete internship (only company who owns it)
-const deleteInternship = async (req, res) => {
+// Company deletes internship
+const deleteInternshipHandler = async (req, res) => {
   try {
     const { id } = req.params;
     const internship = await Internship.getInternshipById(id);
-    if (internship.length === 0) return res.status(404).json({ message: "Internship not found" });
 
-    if (req.user.userType !== 'Company' || internship[0].companyID !== req.user.id) {
+    if (!internship) return res.status(404).json({ message: "Internship not found" });
+    if (req.user.userType !== 'Company' || internship.companyID !== req.user.userID) {
       return res.status(403).json({ message: "You can only delete your own internships" });
     }
 
@@ -84,4 +100,10 @@ const deleteInternship = async (req, res) => {
   }
 };
 
-module.exports = { createInternship, getAllInternships, getInternshipById, updateInternship, deleteInternship };
+module.exports = { 
+  createInternshipHandler, 
+  getInternshipsHandler, 
+  getInternshipByIdHandler, 
+  updateInternshipHandler, 
+  deleteInternshipHandler 
+};
