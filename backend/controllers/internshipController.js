@@ -1,4 +1,3 @@
-// controllers/internshipController.js
 const Internship = require('../models/internshipModel');
 
 // Company creates a new internship
