@@ -19,17 +19,25 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setStatus(AuthStatus.loading);
     try {
-      final response = await ApiService().post('/auth/login', {
+      final response = await ApiService().post('/users/login', {
         'email': email,
         'password': password,
       });
       final data = response.data as Map<String, dynamic>;
+
+      if (data['token'] == null) {
+        throw Exception('No token received from server');
+      }
+
       final token = data['token'] as String;
-      final userType = data['userType'] as String;
+      final user = data['user'] as Map<String, dynamic>;
+      final userType = user['userType'] as String;
+      final userId = user['userID'].toString();
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(AppConstants.tokenKey, token);
       await prefs.setString(AppConstants.userTypeKey, userType);
+      await prefs.setString(AppConstants.userIdKey, userId);
 
       _setStatus(AuthStatus.authenticated);
 
@@ -52,8 +60,14 @@ class AuthProvider with ChangeNotifier {
   }) async {
     _setStatus(AuthStatus.loading);
     try {
-      await ApiService().post('/auth/register', payload);
+      // Ensure required fields are present
+      if (!payload.containsKey('email') || !payload.containsKey('password') || !payload.containsKey('userType')) {
+        throw Exception('Email, password, and userType are required');
+      }
+
+      await ApiService().post('/users/register', payload);
       _setStatus(AuthStatus.idle);
+
       if (context.mounted) {
         Navigator.of(context).pushReplacementNamed('/login');
       }

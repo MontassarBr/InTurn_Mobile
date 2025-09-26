@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // API Configuration
-  static const String baseUrl = 'http://localhost:5000/api';
-  static const String imageBaseUrl = 'http://localhost:5000/uploads/';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  static const String imageBaseUrl = 'http://10.0.2.2:5000/uploads/';
 
   // JWT Token keys
   static const String tokenKey = 'auth_token';
