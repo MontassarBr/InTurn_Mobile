@@ -58,6 +58,47 @@ const addSkill = async (req, res) => {
   }
 };
 
+// Delete education
+const deleteEducation = async (req, res) => {
+  try {
+    if (req.user.userType !== 'Student') return res.status(403).json({ message: 'Only students can delete education' });
+    const { institution, diploma } = req.query;
+    if (!institution || !diploma) return res.status(400).json({ message: 'institution and diploma required' });
+    await Student.deleteEducation(req.user.userID, institution, diploma);
+    res.json({ message: 'Education deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete skill
+const deleteSkill = async (req, res) => {
+  try {
+    if (req.user.userType !== 'Student') return res.status(403).json({ message: 'Only students can delete skill' });
+
+    const { skill } = req.params;
+    await Student.deleteSkill(req.user.userID, skill);
+    res.json({ message: 'Skill deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete professional experience
+const deleteProExperience = async (req, res) => {
+  try {
+    if (req.user.userType !== 'Student') return res.status(403).json({ message: 'Only students can delete experience' });
+    const { id } = req.params;
+    await Student.deleteProExperience(id, req.user.userID);
+    res.json({ message: 'Experience deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Add professional experience
 const addProExperience = async (req, res) => {
   try {
@@ -94,5 +135,8 @@ module.exports = {
   addEducation, 
   addSkill, 
   addProExperience,
-  getFullProfileHandler
+  getFullProfileHandler,
+  deleteSkill,
+  deleteEducation,
+  deleteProExperience
 };

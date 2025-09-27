@@ -41,4 +41,10 @@ const getFullProfile = async (companyID) => {
   };
 };
 
-module.exports = { getCompanyById, updateCompany, addBenefit, getFullProfile };
+// Delete company benefit
+const deleteBenefit = async (companyID, benefit) => {
+  const sql = `DELETE FROM CompanyBenefit WHERE companyID = ? AND benefit = ?`;
+  await pool.query(sql, [companyID, benefit]);
+};
+
+module.exports = { getCompanyById, updateCompany, addBenefit, deleteBenefit, getFullProfile };

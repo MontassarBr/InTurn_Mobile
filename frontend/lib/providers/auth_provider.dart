@@ -42,11 +42,7 @@ class AuthProvider with ChangeNotifier {
       _setStatus(AuthStatus.authenticated);
 
       if (context.mounted) {
-        if (userType == AppConstants.studentType) {
-          Navigator.of(context).pushReplacementNamed('/student-dashboard');
-        } else {
-          Navigator.of(context).pushReplacementNamed('/company-dashboard');
-        }
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       _errorMessage = 'Login failed. ${e.toString()}';
@@ -65,11 +61,25 @@ class AuthProvider with ChangeNotifier {
         throw Exception('Email, password, and userType are required');
       }
 
-      await ApiService().post('/users/register', payload);
-      _setStatus(AuthStatus.idle);
+      final response = await ApiService().post('/users/register', payload);
+      final data = response.data as Map<String, dynamic>;
+
+      if (data['token'] == null) throw Exception('No token returned after registration');
+
+      final token = data['token'] as String;
+      final user = data['user'] as Map<String, dynamic>;
+      final userType = user['userType'] as String;
+      final userId = user['userID'].toString();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConstants.tokenKey, token);
+      await prefs.setString(AppConstants.userTypeKey, userType);
+      await prefs.setString(AppConstants.userIdKey, userId);
+
+      _setStatus(AuthStatus.authenticated);
 
       if (context.mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       _errorMessage = 'Registration failed. ${e.toString()}';

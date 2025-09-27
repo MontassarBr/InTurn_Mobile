@@ -35,7 +35,25 @@ const registerUser = async (req, res) => {
       await User.createCompany(userID, companyName || "");
     }
 
-    res.status(201).json({ message: "User registered successfully", userID, userType });
+    // Generate JWT token so the user can be logged in immediately
+    const token = jwt.sign(
+      { id: userID, userType },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: {
+        userID,
+        email,
+        userType,
+        location: location || null,
+        description: description || null,
+        profilePic: profilePic || null,
+      },
+    });
   } catch (err) {
     console.error("Error registering user:", err);
     res.status(500).json({ message: "Server error" });

@@ -69,11 +69,29 @@ const getFullProfile = async (studentID) => {
   };
 };
 
+const deleteEducation = async (studentID, institution, diploma) => {
+  const sql = `DELETE FROM Education WHERE studentID = ? AND institution = ? AND diploma = ?`;
+  await pool.query(sql, [studentID, institution, diploma]);
+};
+
+const deleteSkill = async (studentID, skill) => {
+  const sql = `DELETE FROM Skills WHERE studentID = ? AND skill = ?`;
+  await pool.query(sql, [studentID, skill]);
+};
+
+const deleteProExperience = async (experienceID, studentID) => {
+  const sql = `DELETE FROM ProExperience WHERE experienceID = ? AND studentID = ?`;
+  await pool.query(sql, [experienceID, studentID]);
+};
+
 module.exports = { 
   getStudentById, 
   updateStudent, 
   addEducation, 
   addSkill, 
   addProExperience,
+  deleteEducation,
+  deleteSkill,
+  deleteProExperience,
   getFullProfile 
 };

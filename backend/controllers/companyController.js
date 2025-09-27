@@ -60,4 +60,17 @@ const getFullProfileHandler = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, addBenefit, getFullProfileHandler };
+// Delete benefit
+const deleteBenefit = async (req, res) => {
+  try {
+    if (req.user.userType !== 'Company') return res.status(403).json({ message: 'Only companies can delete benefits' });
+    const { benefit } = req.params;
+    await Company.deleteBenefit(req.user.userID, benefit);
+    res.json({ message: 'Benefit deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getProfile, updateProfile, addBenefit, deleteBenefit, getFullProfileHandler };

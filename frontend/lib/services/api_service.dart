@@ -40,10 +40,18 @@ class ApiService {
   }
 
   Future<Response<T>> put<T>(String path, dynamic data) async {
-    return _dio.put<T>(path, data: data);
+    try {
+      print('API PUT Request: $path with data: $data'); // Debug log
+      final response = await _dio.put<T>(path, data: data);
+      print('API PUT Response: ${response.statusCode} - ${response.data}'); // Debug log
+      return response;
+    } catch (e) {
+      print('API PUT Error: $e'); // Debug log
+      rethrow;
+    }
   }
 
-  Future<Response<T>> delete<T>(String path) async {
-    return _dio.delete<T>(path);
+  Future<Response<T>> delete<T>(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return _dio.delete<T>(path, data: data, queryParameters: queryParameters);
   }
 }
