@@ -41,10 +41,29 @@ const getFullProfile = async (companyID) => {
   };
 };
 
-// Delete company benefit
 const deleteBenefit = async (companyID, benefit) => {
   const sql = `DELETE FROM CompanyBenefit WHERE companyID = ? AND benefit = ?`;
   await pool.query(sql, [companyID, benefit]);
 };
 
-module.exports = { getCompanyById, updateCompany, addBenefit, deleteBenefit, getFullProfile };
+// Get all companies for public directory
+const getAllCompanies = async () => {
+  const sql = `
+    SELECT c.companyID, c.companyName, c.website, c.industry, u.description, u.location
+    FROM Company c
+    JOIN User u ON c.companyID = u.userID
+    WHERE u.userType = 'Company'
+    ORDER BY c.companyName ASC
+  `;
+  const [rows] = await pool.query(sql);
+  return rows;
+};
+
+module.exports = {
+  getCompanyById,
+  updateCompany,
+  addBenefit,
+  deleteBenefit,
+  getFullProfile,
+  getAllCompanies
+};

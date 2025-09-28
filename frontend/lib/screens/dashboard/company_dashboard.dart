@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/constants.dart';
 import '../../providers/application_provider.dart';
 import '../../providers/internship_provider.dart';
 import '../../providers/company_profile_provider.dart';
 import '../../models/application.dart';
 import '../../models/internship.dart';
+import '../internships/create_internship_screen.dart';
+import '../applications/company_applications_screen.dart';
 
 class CompanyDashboard extends StatefulWidget {
   const CompanyDashboard({Key? key}) : super(key: key);
@@ -19,8 +22,35 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<InternshipProvider>().fetchInternships();
+      _loadCompanyData();
     });
+  }
+
+  Future<void> _loadCompanyData() async {
+    // Load company internships
+    await context.read<InternshipProvider>().fetchInternships();
+    
+    // Load company profile
+    await context.read<CompanyProfileProvider>().fetchProfile();
+    
+    // Load company applications data
+    await _loadCompanyApplications();
+  }
+
+  Future<void> _loadCompanyApplications() async {
+    try {
+      // Get authenticated company ID (same logic as applications screen)
+      final prefs = await SharedPreferences.getInstance();
+      final companyIdStr = prefs.getString(AppConstants.userIdKey);
+      final userType = prefs.getString(AppConstants.userTypeKey);
+      
+      if (companyIdStr != null && userType == AppConstants.companyType) {
+        final companyId = int.parse(companyIdStr);
+        await context.read<ApplicationProvider>().fetchApplicationsForCompany(companyId);
+      }
+    } catch (e) {
+      print('Error loading company applications for dashboard: $e');
+    }
   }
 
   @override
@@ -38,11 +68,11 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
           ),
         ],
       ),
-      body: Consumer2<InternshipProvider, CompanyProfileProvider>(
-        builder: (context, internshipProvider, profileProvider, _) {
+      body: Consumer3<InternshipProvider, CompanyProfileProvider, ApplicationProvider>(
+        builder: (context, internshipProvider, profileProvider, applicationProvider, _) {
           return RefreshIndicator(
             onRefresh: () async {
-              await internshipProvider.fetchInternships();
+              await _loadCompanyData();
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -52,11 +82,19 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
                 children: [
                   _WelcomeSection(profileProvider: profileProvider),
                   const SizedBox(height: 24),
-                  _StatsSection(internshipProvider: internshipProvider),
+                  _StatsSection(
+                    internshipProvider: internshipProvider,
+                    applicationProvider: applicationProvider,
+                  ),
                   const SizedBox(height: 24),
-                  _RecentInternshipsSection(internshipProvider: internshipProvider),
+                  _RecentInternshipsSection(
+                    internshipProvider: internshipProvider,
+                    onCreateInternship: () => _showCreateInternshipDialog(context),
+                  ),
                   const SizedBox(height: 24),
-                  _QuickActionsSection(),
+                  _QuickActionsSection(
+                    onCreateInternship: () => _showCreateInternshipDialog(context),
+                  ),
                 ],
               ),
             ),
@@ -67,17 +105,9 @@ class _CompanyDashboardState extends State<CompanyDashboard> {
   }
 
   void _showCreateInternshipDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Internship'),
-        content: const Text('This feature will be implemented soon. You can create internships through the profile section.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CreateInternshipScreen(),
       ),
     );
   }
@@ -138,14 +168,25 @@ class _WelcomeSection extends StatelessWidget {
 
 class _StatsSection extends StatelessWidget {
   final InternshipProvider internshipProvider;
+  final ApplicationProvider applicationProvider;
   
-  const _StatsSection({required this.internshipProvider});
+  const _StatsSection({
+    required this.internshipProvider,
+    required this.applicationProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     final internships = internshipProvider.internships;
-    final activeInternships = internships.where((internship) => internship.status == 'active').length;
-    final totalApplications = 0; // This would need to be fetched from applications
+    final publishedInternships = internships.where((internship) => 
+        internship.status == 'Published' || internship.status == 'published').length;
+    
+    final applications = applicationProvider.applications;
+    final totalApplications = applications.length;
+    final pendingApplications = applications.where((app) => app.status == 'Pending').length;
+    
+    // Show loading indicator if data is still being fetched
+    final isLoading = internshipProvider.loading || applicationProvider.loading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,6 +196,14 @@ class _StatsSection extends StatelessWidget {
           style: AppConstants.headingStyle.copyWith(fontSize: 20),
         ),
         const SizedBox(height: 16),
+        if (isLoading)
+          Container(
+            height: 200,
+            child: Center(
+              child: CircularProgressIndicator(color: AppConstants.primaryColor),
+            ),
+          )
+        else ...[
         Row(
           children: [
             Expanded(
@@ -168,8 +217,8 @@ class _StatsSection extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _StatCard(
-                title: 'Active Internships',
-                value: activeInternships.toString(),
+                title: 'Published Internships',
+                value: publishedInternships.toString(),
                 icon: Icons.check_circle_outline,
                 color: Colors.green,
               ),
@@ -191,13 +240,14 @@ class _StatsSection extends StatelessWidget {
             Expanded(
               child: _StatCard(
                 title: 'Pending Reviews',
-                value: '0', // This would need to be calculated
+                value: pendingApplications.toString(),
                 icon: Icons.schedule_outlined,
                 color: Colors.orange,
               ),
             ),
           ],
         ),
+        ], // Close else block
       ],
     );
   }
@@ -267,8 +317,12 @@ class _StatCard extends StatelessWidget {
 
 class _RecentInternshipsSection extends StatelessWidget {
   final InternshipProvider internshipProvider;
+  final VoidCallback onCreateInternship;
   
-  const _RecentInternshipsSection({required this.internshipProvider});
+  const _RecentInternshipsSection({
+    required this.internshipProvider,
+    required this.onCreateInternship,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -328,10 +382,7 @@ class _RecentInternshipsSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigate to create internship
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: onCreateInternship,
                   icon: const Icon(Icons.add),
                   label: const Text('Create Internship'),
                   style: ElevatedButton.styleFrom(
@@ -473,21 +524,30 @@ class _InternshipCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Navigate to applications for this internship
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const CompanyApplicationsScreen(),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.assignment_outlined, size: 16),
-                  label: const Text('View Applications'),
+                  icon: const Icon(Icons.assignment_outlined, size: 12),
+                  label: const Text('Details'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppConstants.primaryColor,
                     side: BorderSide(color: AppConstants.primaryColor),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Edit internship
+                    // Navigate to edit internship screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CreateInternshipScreen(internship: internship),
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit'),
@@ -497,16 +557,131 @@ class _InternshipCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showDeleteDialog(context, internship),
+                  icon: const Icon(Icons.delete_outline, size: 16),
+                  label: const Text('Delete'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red[600],
+                    side: BorderSide(color: Colors.red[300]!),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
   }
+
+  void _showDeleteDialog(BuildContext context, dynamic internship) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.warning_outlined, color: Colors.red[600], size: 24),
+              const SizedBox(width: 12),
+              const Text('Delete Internship'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to delete "${internship.title}"?',
+                style: AppConstants.subheadingStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This action cannot be undone. All applications for this internship will also be affected.',
+                style: AppConstants.bodyStyle.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => _deleteInternship(context, internship),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteInternship(BuildContext context, dynamic internship) async {
+    // Close the dialog first
+    Navigator.of(context).pop();
+    
+    // Store references before async operations
+    final internshipProvider = context.read<InternshipProvider>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      final success = await internshipProvider.deleteInternship(internship.internshipID);
+      
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('${internship.title} deleted successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // Refresh the internships list
+        internshipProvider.fetchInternships();
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(internshipProvider.error ?? 'Failed to delete internship'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting internship: $e');
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete internship: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 }
 
 class _QuickActionsSection extends StatelessWidget {
-  const _QuickActionsSection();
+  final VoidCallback onCreateInternship;
+  
+  const _QuickActionsSection({
+    required this.onCreateInternship,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -526,9 +701,7 @@ class _QuickActionsSection extends StatelessWidget {
                 subtitle: 'Post a new opportunity',
                 icon: Icons.add_circle_outline,
                 color: AppConstants.primaryColor,
-                onTap: () {
-                  // Navigate to create internship
-                },
+                onTap: onCreateInternship,
               ),
             ),
             const SizedBox(width: 12),
@@ -538,9 +711,16 @@ class _QuickActionsSection extends StatelessWidget {
                 subtitle: 'Review candidates',
                 icon: Icons.assignment_outlined,
                 color: Colors.blue,
-                onTap: () {
-                  // Navigate to applications
-                  DefaultTabController.of(context)?.animateTo(2);
+                onTap: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CompanyApplicationsScreen(),
+                    ),
+                  );
+                  // Refresh dashboard data when returning from applications
+                  if (result != null) {
+                    context.read<InternshipProvider>().fetchInternships();
+                  }
                 },
               ),
             ),

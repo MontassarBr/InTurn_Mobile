@@ -45,33 +45,184 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> with TickerPr
               children: [
                 _HeaderSection(company: widget.company),
                 const SizedBox(height: 20),
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppConstants.primaryColor,
-                  labelColor: AppConstants.primaryColor,
-                  unselectedLabelColor: Colors.grey[600],
-                  tabs: const [
-                    Tab(text: 'About', icon: Icon(Icons.info_outline)),
-                    Tab(text: 'Internships', icon: Icon(Icons.work_outline)),
-                    Tab(text: 'Reviews', icon: Icon(Icons.star_outline)),
-                  ],
-                ),
-                SizedBox(
-                  height: 400,
-                  child: TabBarView(
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TabBar(
                     controller: _tabController,
-                    children: [
-                      _AboutTab(company: widget.company),
-                      _InternshipsTab(company: widget.company),
-                      _ReviewsTab(company: widget.company),
+                    indicatorColor: Colors.transparent,
+                    labelColor: AppConstants.primaryColor,
+                    unselectedLabelColor: Colors.grey[600],
+                    indicator: BoxDecoration(
+                      color: AppConstants.primaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicatorPadding: const EdgeInsets.all(6),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    tabs: const [
+                      Tab(text: 'About', icon: Icon(Icons.info_outline, size: 18)),
+                      Tab(text: 'Internships', icon: Icon(Icons.work_outline, size: 18)),
+                      Tab(text: 'Reviews', icon: Icon(Icons.star_outline, size: 18)),
                     ],
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
+            ),
+          ),
+          SliverFillRemaining(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 100), // Space for FAB
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _AboutTab(company: widget.company),
+                  _InternshipsTab(company: widget.company),
+                  _ReviewsTab(company: widget.company),
+                ],
+              ),
             ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          _showQuickActions(context);
+        },
+        backgroundColor: AppConstants.primaryColor,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.flash_on),
+        label: const Text('Quick Actions'),
+        elevation: 4,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  void _showQuickActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Quick Actions',
+              style: AppConstants.headingStyle.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 20),
+            _QuickActionTile(
+              icon: Icons.favorite_outline,
+              title: 'Follow Company',
+              subtitle: 'Get notified about new opportunities',
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Following feature coming soon!')),
+                );
+              },
+            ),
+            _QuickActionTile(
+              icon: Icons.share_outlined,
+              title: 'Share Company',
+              subtitle: 'Share with friends and colleagues',
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Share feature coming soon!')),
+                );
+              },
+            ),
+            _QuickActionTile(
+              icon: Icons.contact_page_outlined,
+              title: 'Contact Company',
+              subtitle: 'Get in touch directly',
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Contact feature coming soon!')),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _QuickActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppConstants.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: AppConstants.primaryColor),
+      ),
+      title: Text(
+        title,
+        style: AppConstants.subheadingStyle.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: AppConstants.bodyStyle.copyWith(
+          color: Colors.grey[600],
+          fontSize: 13,
+        ),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      tileColor: Colors.grey[50],
     );
   }
 }
@@ -104,20 +255,35 @@ class _AppBarSection extends StatelessWidget {
             children: [
               Positioned(
                 right: 16,
-                top: 16,
+                top: 50, // Moved down from 16 to 50 to avoid status bar
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.share, color: Colors.white),
-                      onPressed: () {
-                        // Share company
-                      },
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.share, color: Colors.white),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Share feature coming soon!')),
+                          );
+                        },
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert, color: Colors.white),
-                      onPressed: () {
-                        _showCompanyOptions(context);
-                      },
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.more_vert, color: Colors.white),
+                        onPressed: () {
+                          _showCompanyOptions(context);
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -238,6 +404,7 @@ class _HeaderSection extends StatelessWidget {
     final companyName = company['companyName']?.toString() ?? 'Company';
     final industry = company['industry']?.toString() ?? '';
     final website = company['website']?.toString() ?? '';
+    final location = company['location']?.toString() ?? '';
     final description = company['description']?.toString() ?? '';
 
     return Container(
@@ -248,53 +415,106 @@ class _HeaderSection extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: 90,
+                height: 90,
                 decoration: BoxDecoration(
-                  color: AppConstants.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppConstants.primaryColor.withOpacity(0.1),
+                      AppConstants.primaryColor.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppConstants.primaryColor.withOpacity(0.2),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppConstants.primaryColor.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(
                     companyName.isNotEmpty ? companyName[0].toUpperCase() : 'C',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 36,
                       fontWeight: FontWeight.bold,
                       color: AppConstants.primaryColor,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       companyName,
-                      style: AppConstants.headingStyle.copyWith(fontSize: 24),
+                      style: AppConstants.headingStyle.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    if (industry.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        industry,
-                        style: AppConstants.subheadingStyle.copyWith(
-                          color: AppConstants.primaryColor,
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(height: 6),
+                    if (industry.isNotEmpty) 
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppConstants.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppConstants.primaryColor.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          industry,
+                          style: AppConstants.subheadingStyle.copyWith(
+                            color: AppConstants.primaryColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
-                    ],
-                    if (website.isNotEmpty) ...[
+                    if (location.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
+                          Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              location,
+                              style: AppConstants.bodyStyle.copyWith(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (website.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
                           Icon(Icons.language_outlined, size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            website,
-                            style: AppConstants.bodyStyle.copyWith(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              website,
+                              style: AppConstants.bodyStyle.copyWith(
+                                color: AppConstants.primaryColor,
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ],
@@ -306,16 +526,25 @@ class _HeaderSection extends StatelessWidget {
             ],
           ),
           if (description.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              description,
-              style: AppConstants.bodyStyle.copyWith(
-                height: 1.5,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Text(
+                description,
+                style: AppConstants.bodyStyle.copyWith(
+                  height: 1.6,
+                  fontSize: 15,
+                ),
               ),
             ),
           ],
-          const SizedBox(height: 16),
-          _CompanyStats(),
+          const SizedBox(height: 24),
+          _CompanyStats(company: company),
         ],
       ),
     );
@@ -323,33 +552,71 @@ class _HeaderSection extends StatelessWidget {
 }
 
 class _CompanyStats extends StatelessWidget {
-  const _CompanyStats();
+  final Map<String, dynamic> company;
+  
+  const _CompanyStats({required this.company});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _StatCard(
-          icon: Icons.work_outline,
-          value: '15+',
-          label: 'Open Positions',
-          color: AppConstants.primaryColor,
-        ),
-        const SizedBox(width: 16),
-        _StatCard(
-          icon: Icons.star,
-          value: '4.5',
-          label: 'Rating',
-          color: Colors.orange,
-        ),
-        const SizedBox(width: 16),
-        _StatCard(
-          icon: Icons.people_outline,
-          value: '50-200',
-          label: 'Employees',
-          color: Colors.blue,
-        ),
-      ],
+    return Consumer<InternshipProvider>(
+      builder: (context, internshipProvider, _) {
+        // Calculate dynamic stats
+        final internships = internshipProvider.internships;
+        final companyInternships = internships.where((internship) {
+          // This would normally filter by company ID, but for now show all
+          return internship.status.toLowerCase() == 'published';
+        }).length;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics_outlined, color: Colors.grey[700], size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Company Overview',
+                  style: AppConstants.subheadingStyle.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.work_outline,
+                    value: '$companyInternships',
+                    label: 'Open Positions',
+                    color: AppConstants.primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.star,
+                    value: '4.5',
+                    label: 'Rating',
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.people_outline,
+                    value: '50-200',
+                    label: 'Employees',
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -370,29 +637,47 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
             style: TextStyle(
               color: color,
-              fontSize: 16,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: color,
-              fontSize: 10,
+              color: Colors.grey[600],
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -408,7 +693,7 @@ class _AboutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,6 +751,7 @@ class _AboutTab extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 24), // Extra bottom padding
         ],
       ),
     );
@@ -566,9 +852,13 @@ class _InternshipsTab extends StatelessWidget {
         }
 
         final internships = provider.internships;
+        final companyId = company['companyID'];
         final companyInternships = internships.where((internship) {
-          // In a real app, you would filter by company ID
-          return true; // For now, show all internships
+          // Filter by company ID if available, otherwise show all published internships
+          if (companyId != null) {
+            return internship.companyID == companyId;
+          }
+          return internship.status.toLowerCase() == 'published';
         }).toList();
 
         return companyInternships.isEmpty
@@ -595,16 +885,17 @@ class _InternshipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -615,96 +906,156 @@ class _InternshipCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  internship.title,
+                  internship.title ?? 'Internship Position',
                   style: AppConstants.subheadingStyle.copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: 18,
                   ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppConstants.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppConstants.primaryColor.withOpacity(0.3),
+                  ),
                 ),
                 child: Text(
-                  internship.status.toUpperCase(),
+                  internship.status?.toUpperCase() ?? 'OPEN',
                   style: TextStyle(
                     color: AppConstants.primaryColor,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
             children: [
-              Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                internship.location,
-                style: AppConstants.bodyStyle.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+              if (internship.location != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(
+                      internship.location!,
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              if (internship.workArrangement != null) ...[
-                const SizedBox(width: 16),
-                Icon(Icons.work_outline, size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  internship.workArrangement,
-                  style: AppConstants.bodyStyle.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+              if (internship.workArrangement != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.work_outline, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(
+                      internship.workArrangement!,
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              if (internship.workTime != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(
+                      internship.workTime!,
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           if (internship.minSalary != null && internship.maxSalary != null) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.attach_money, size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '\$${internship.minSalary.toStringAsFixed(0)} - \$${internship.maxSalary.toStringAsFixed(0)}',
-                  style: AppConstants.bodyStyle.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.attach_money, size: 16, color: Colors.green[700]),
+                  const SizedBox(width: 6),
+                  Text(
+                    '\$${internship.minSalary!.toStringAsFixed(0)} - \$${internship.maxSalary!.toStringAsFixed(0)}',
+                    style: AppConstants.bodyStyle.copyWith(
+                      color: Colors.green[700],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: OutlinedButton.icon(
                   onPressed: () {
                     // Navigate to internship details
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('View details feature coming soon!')),
+                    );
                   },
-                  child: const Text('View Details'),
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: const Text('Details'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppConstants.primaryColor,
                     side: BorderSide(color: AppConstants.primaryColor),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   onPressed: () {
                     // Apply to internship
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Applied to ${internship.title ?? 'internship'}!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   },
-                  child: const Text('Apply'),
+                  icon: const Icon(Icons.send, size: 18),
+                  label: const Text('Apply'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppConstants.primaryColor,
                     foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
                 ),
               ),
@@ -762,31 +1113,39 @@ class _ReviewsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mock reviews data
+    // Mock reviews data - Tunisian context
     final reviews = [
       {
-        'name': 'Sarah Johnson',
+        'name': 'Amira Ben Salem',
         'rating': 5,
         'date': '2 months ago',
-        'title': 'Great learning experience',
-        'content': 'The internship provided excellent opportunities to learn and grow. The team was supportive and the projects were challenging.',
+        'title': 'تجربة تعلم رائعة - Great learning experience',
+        'content': 'The internship in Tunis was incredible! I gained valuable experience in software development and the team was very welcoming. The company culture embraces both innovation and Tunisian values.',
         'role': 'Software Development Intern',
       },
       {
-        'name': 'Michael Chen',
+        'name': 'Mohamed Khaled',
         'rating': 4,
         'date': '3 months ago',
-        'title': 'Good company culture',
-        'content': 'The company has a great culture and work environment. The mentorship program is particularly helpful.',
+        'title': 'Excellent mentorship program',
+        'content': 'Working at this company in Tunisia has been amazing. The mentors are experienced professionals who really care about your growth. Great balance of challenging work and supportive environment.',
         'role': 'Data Science Intern',
       },
       {
-        'name': 'Emily Rodriguez',
+        'name': 'Leila Trabelsi',
         'rating': 5,
         'date': '4 months ago',
-        'title': 'Amazing experience',
-        'content': 'I learned so much during my internship. The projects were interesting and the team was very welcoming.',
-        'role': 'Marketing Intern',
+        'title': 'Perfect start to my career',
+        'content': 'As a fresh graduate from ENSI, this internship gave me the perfect foundation for my career. The projects were innovative and I worked with the latest technologies. Highly recommend!',
+        'role': 'Mobile App Development Intern',
+      },
+      {
+        'name': 'Youssef Mansouri',
+        'rating': 4,
+        'date': '5 months ago',
+        'title': 'شركة ممتازة - Excellent company',
+        'content': 'The company provides great opportunities for Tunisian students. Working on real projects for international clients while being based in Sfax was a unique experience.',
+        'role': 'UI/UX Design Intern',
       },
     ];
 

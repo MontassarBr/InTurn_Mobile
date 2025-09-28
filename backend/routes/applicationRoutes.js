@@ -6,7 +6,10 @@ const {
   applyToInternshipHandler,
   getStudentApplicationsHandler,
   getInternshipApplicationsHandler,
-  updateApplicationStatusHandler
+  getCompanyApplicationsHandler,
+  getCompanyApplicationsPublicHandler,
+  updateApplicationStatusHandler,
+  updateApplicationStatusPublicHandler
 } = require('../controllers/applicationController');
 
 //Students
@@ -20,7 +23,16 @@ router.get('/student', protect, getStudentApplicationsHandler);
 // Get all applications for a specific internship
 router.get('/internship/:internshipID', protect, getInternshipApplicationsHandler);
 
+// Get all applications for all company's internships
+router.get('/company/:companyID', protect, getCompanyApplicationsHandler);
+
+// Public endpoint for testing (no auth required)
+router.get('/public/company/:companyID', getCompanyApplicationsPublicHandler);
+
 // Update application status (company only)
 router.put('/status', protect, updateApplicationStatusHandler);
+
+// Public endpoint for status update (testing only)
+router.put('/public/status', updateApplicationStatusPublicHandler);
 
 module.exports = router;

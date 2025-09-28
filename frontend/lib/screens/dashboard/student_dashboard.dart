@@ -6,10 +6,10 @@ import '../../providers/internship_provider.dart';
 import '../../providers/student_profile_provider.dart';
 import '../../models/application.dart';
 import '../../models/internship.dart';
+import '../internships/internship_detail_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({Key? key}) : super(key: key);
-
   @override
   State<StudentDashboard> createState() => _StudentDashboardState();
 }
@@ -21,6 +21,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ApplicationProvider>().fetchMyApplications();
       context.read<InternshipProvider>().fetchInternships();
+      context.read<StudentProfileProvider>().fetchProfile();
     });
   }
 
@@ -312,37 +313,71 @@ class _RecentApplicationsSection extends StatelessWidget {
             ),
           )
         else
-          ...recentApplications.map((application) => _ApplicationCard(application: application)),
+          ...recentApplications.map((application) => Consumer<InternshipProvider>(
+            builder: (context, internshipProvider, _) => _ApplicationCard(
+              application: application,
+              internshipProvider: internshipProvider,
+            ),
+          )),
       ],
     );
   }
 }
 
+
 class _ApplicationCard extends StatelessWidget {
   final Application application;
+  final InternshipProvider internshipProvider;
 
-  const _ApplicationCard({required this.application});
+  const _ApplicationCard({
+    required this.application,
+    required this.internshipProvider,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    Color statusColor;
-    IconData statusIcon;
-    
-    switch (application.status.toLowerCase()) {
-      case 'accepted':
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case 'rejected':
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-        break;
-      default:
-        statusColor = Colors.orange;
-        statusIcon = Icons.schedule;
-    }
+@override
+Widget build(BuildContext context) {
+  Color statusColor;
+  IconData statusIcon;
 
-    return Container(
+  switch (application.status.toLowerCase()) {
+    case 'accepted':
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle;
+      break;
+    case 'rejected':
+      statusColor = Colors.red;
+      statusIcon = Icons.cancel;
+      break;
+    default:
+      statusColor = Colors.orange;
+      statusIcon = Icons.schedule;
+  }
+
+  // Find the internship by ID to get the title
+  final internship = internshipProvider.internships.firstWhere(
+    (internship) => internship.internshipID == application.internshipID,
+    orElse: () => Internship(
+      internshipID: application.internshipID,
+      title: 'Unknown Internship',
+      description: '',
+      location: '',
+      status: '',
+      companyID: 0,
+      startDate: '',
+      endDate: '',
+    ),
+  );
+
+  return GestureDetector(
+    onTap: () {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => InternshipDetailScreen(internship: internship),
+        ),
+      );
+    },
+    child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -359,6 +394,7 @@ class _ApplicationCard extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Status icon
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -368,15 +404,19 @@ class _ApplicationCard extends StatelessWidget {
             child: Icon(statusIcon, color: statusColor, size: 20),
           ),
           const SizedBox(width: 12),
+
+          // Internship details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Application #${application.internshipID}',
+                  internship.title,
                   style: AppConstants.subheadingStyle.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -386,9 +426,31 @@ class _ApplicationCard extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
+                if (internship.location.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 12, color: Colors.grey[500]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          internship.location,
+                          style: AppConstants.bodyStyle.copyWith(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
+
+          // Status label
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -406,8 +468,9 @@ class _ApplicationCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _formatDate(String dateString) {
     try {
@@ -497,94 +560,167 @@ class _InternshipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        // Navigate to internship detail screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => InternshipDetailScreen(internship: internship),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  internship.title,
-                  style: AppConstants.subheadingStyle.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppConstants.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  internship.status.toUpperCase(),
-                  style: TextStyle(
-                    color: AppConstants.primaryColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                internship.location,
-                style: AppConstants.bodyStyle.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-              if (internship.workArrangement != null) ...[
-                const SizedBox(width: 16),
-                Icon(Icons.work_outline, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  internship.workArrangement!,
-                  style: AppConstants.bodyStyle.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          if (internship.minSalary != null && internship.maxSalary != null) ...[
-            const SizedBox(height: 8),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
-                Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '\$${internship.minSalary!.toStringAsFixed(0)} - \$${internship.maxSalary!.toStringAsFixed(0)}',
-                  style: AppConstants.bodyStyle.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+                // Company Logo Circle
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppConstants.primaryColor.withOpacity(0.8),
+                        AppConstants.primaryColor.withOpacity(0.6),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppConstants.primaryColor.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      (internship.companyName != null && internship.companyName!.isNotEmpty)
+                          ? internship.companyName![0].toUpperCase()
+                          : 'C',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        internship.title,
+                        style: AppConstants.subheadingStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (internship.companyName != null && internship.companyName!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          internship.companyName!,
+                          style: AppConstants.bodyStyle.copyWith(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    internship.status.toUpperCase(),
+                    style: TextStyle(
+                      color: AppConstants.primaryColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    internship.location,
+                    style: AppConstants.bodyStyle.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (internship.workArrangement != null) ...[
+                  const SizedBox(width: 16),
+                  Icon(Icons.work_outline, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    internship.workArrangement!,
+                    style: AppConstants.bodyStyle.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (internship.minSalary != null && internship.maxSalary != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.monetization_on_outlined, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    '\$${internship.minSalary!.toInt()} - \$${internship.maxSalary!.toInt()}',
+                    style: AppConstants.bodyStyle.copyWith(
+                      color: AppConstants.primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

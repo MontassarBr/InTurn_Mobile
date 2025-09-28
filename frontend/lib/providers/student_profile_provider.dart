@@ -6,12 +6,26 @@ import '../models/experience.dart';
 class StudentProfileProvider with ChangeNotifier {
   final ApiService _api = ApiService();
 
-  // Basic fields
+  // Basic fields from database
   String firstName = '';
   String lastName = '';
   String? title;
   String? about;
-  String? profilePic;
+  String? cvFile;
+  String? profilePic; // Keep this for compatibility
+  bool openToWork = false;
+  String? phone;
+  
+  // University information
+  String? university;
+  String? degree;
+  int? graduationYear;
+  double? gpa;
+  
+  // Social links
+  String? portfolioUrl;
+  String? linkedinUrl;
+  String? githubUrl;
 
   List<Education> education = [];
   List<String> skills = [];
@@ -141,7 +155,21 @@ class StudentProfileProvider with ChangeNotifier {
       lastName = data['lastName'] ?? '';
       title = data['title'];
       about = data['about'];
-      profilePic = data['profilePic'];
+      cvFile = data['cvFile'];
+      profilePic = data['profilePic']; // Keep for compatibility
+      openToWork = data['openToWork'] == 1 || data['openToWork'] == true;
+      phone = data['phone'];
+      
+      // University information
+      university = data['university'];
+      degree = data['degree'];
+      graduationYear = data['graduationYear'];
+      gpa = data['gpa'] != null ? double.tryParse(data['gpa'].toString()) : null;
+      
+      // Social links
+      portfolioUrl = data['portfolioUrl'];
+      linkedinUrl = data['linkedinUrl'];
+      githubUrl = data['githubUrl'];
       
       print('Parsing education...'); // Debug log
       education = (data['education'] as List<dynamic>? ?? []).map((e) => Education.fromJson(e)).toList();

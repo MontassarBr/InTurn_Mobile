@@ -10,8 +10,9 @@ const {
 } = require('../controllers/internshipController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Public routes for students
+// Get all internships with optional filters (public endpoint)
 router.get('/', getInternshipsHandler);       
+// Get internship by ID (public endpoint)
 router.get('/:id', getInternshipByIdHandler); 
 
 // Protected routes for companies

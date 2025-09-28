@@ -16,29 +16,37 @@ const createInternship = async (companyID, title, startDate, endDate, minSalary,
 
 // Get internships with optional filters and pagination
 const getInternships = async (filters) => {
-  let sql = `SELECT * FROM Internship WHERE 1=1`; // 1=1 allows easy concatenation
+  let sql = `
+    SELECT i.*, c.companyName, c.industry 
+    FROM Internship i 
+    LEFT JOIN Company c ON i.companyID = c.companyID 
+    WHERE i.status = 'Published'
+  `;
   const values = [];
 
   // Filters
   if (filters.location) {
-    sql += ` AND location = ?`;
+    sql += ` AND i.location = ?`;
     values.push(filters.location);
   }
   if (filters.workTime) {
-    sql += ` AND workTime = ?`;
+    sql += ` AND i.workTime = ?`;
     values.push(filters.workTime);
   }
   if (filters.workArrangement) {
-    sql += ` AND workArrangement = ?`;
+    sql += ` AND i.workArrangement = ?`;
     values.push(filters.workArrangement);
   }
   if (filters.payment) {
-    sql += ` AND payment = ?`;
+    sql += ` AND i.payment = ?`;
     values.push(filters.payment);
   }
 
+  // Order by most recent
+  sql += ` ORDER BY i.postedDate DESC`;
+
   // Pagination
-  const limit = parseInt(filters.limit) || 10;   // default 10 per page
+  const limit = parseInt(filters.limit) || 20;   // default 20 per page
   const offset = parseInt(filters.offset) || 0;  // default start at 0
   sql += ` LIMIT ? OFFSET ?`;
   values.push(limit, offset);
@@ -71,10 +79,15 @@ const updateInternship = async (id, data) => {
   return result;
 };
 
-// Delete internship
+// Delete internship and related applications
 const deleteInternship = async (id) => {
-  const sql = `DELETE FROM Internship WHERE internshipID = ?`;
-  const [result] = await pool.query(sql, [id]);
+  // First delete all applications for this internship
+  const deleteApplicationsSql = `DELETE FROM Application WHERE internshipID = ?`;
+  await pool.query(deleteApplicationsSql, [id]);
+  
+  // Then delete the internship itself
+  const deleteInternshipSql = `DELETE FROM Internship WHERE internshipID = ?`;
+  const [result] = await pool.query(deleteInternshipSql, [id]);
   return result;
 };
 

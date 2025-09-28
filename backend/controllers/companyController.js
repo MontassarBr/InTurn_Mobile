@@ -69,8 +69,28 @@ const deleteBenefit = async (req, res) => {
     res.json({ message: 'Benefit deleted' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-module.exports = { getProfile, updateProfile, addBenefit, deleteBenefit, getFullProfileHandler };
+// Get all companies (public endpoint)
+const getAllCompaniesHandler = async (req, res) => {
+  try {
+    console.log('Fetching all companies for public directory');
+    const companies = await Company.getAllCompanies();
+    console.log(`Found ${companies.length} companies`);
+    res.json(companies);
+  } catch (err) {
+    console.error('Error in getAllCompaniesHandler:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  addBenefit,
+  deleteBenefit,
+  getFullProfileHandler,
+  getAllCompaniesHandler
+};

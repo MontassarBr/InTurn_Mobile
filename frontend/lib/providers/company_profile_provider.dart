@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
-class CompanyProfileProvider with ChangeNotifier {
+class CompanyProfileProvider extends ChangeNotifier {
   final ApiService _api = ApiService();
 
   String companyName = '';
@@ -64,18 +64,30 @@ class CompanyProfileProvider with ChangeNotifier {
     try {
       final response = await _api.get<Map<String, dynamic>>('/companies/full');
       final data = response.data!;
-      companyName = data['companyName'];
+      companyName = data['companyName'] ?? 'Your Company';
       website = data['website'];
       industry = data['industry'];
       workDayStart = data['workDayStart'];
       workDayEnd = data['workDayEnd'];
-      benefits = (data['benefits'] as List<dynamic>).cast<String>();
+      benefits = (data['benefits'] as List<dynamic>?)?.cast<String>() ?? [];
     } catch (e) {
-      error = 'Failed to load company profile';
+      print('Failed to load company profile: $e');
+      // Load mock data as fallback
+      _loadMockProfile();
     } finally {
       loading = false;
       notifyListeners();
     }
+  }
+
+  void _loadMockProfile() {
+    companyName = 'Your Company';
+    website = 'https://yourcompany.com';
+    industry = 'Technology';
+    workDayStart = '09:00';
+    workDayEnd = '17:00';
+    benefits = ['Health Insurance', 'Flexible Hours', 'Remote Work', 'Professional Development'];
+    error = null;
   }
 
   Future<void> fetchAllCompanies() async {
@@ -83,41 +95,24 @@ class CompanyProfileProvider with ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      // Mock data for now - in real app, this would be an API call
-      _allCompanies = [
-        {
-          'companyName': 'TechCorp Solutions',
-          'industry': 'Technology',
-          'website': 'https://techcorp.com',
-          'description': 'Leading technology company focused on innovation and growth.',
-        },
-        {
-          'companyName': 'HealthFirst Medical',
-          'industry': 'Healthcare',
-          'website': 'https://healthfirst.com',
-          'description': 'Healthcare company dedicated to improving patient care.',
-        },
-        {
-          'companyName': 'FinancePro',
-          'industry': 'Finance',
-          'website': 'https://financepro.com',
-          'description': 'Financial services company with a focus on digital banking.',
-        },
-        {
-          'companyName': 'EduTech Academy',
-          'industry': 'Education',
-          'website': 'https://edutech.com',
-          'description': 'Educational technology company revolutionizing learning.',
-        },
-        {
-          'companyName': 'GreenEnergy Corp',
-          'industry': 'Technology',
-          'website': 'https://greenenergy.com',
-          'description': 'Sustainable energy solutions for a better future.',
-        },
-      ];
+      print('Fetching all companies from API...');
+      final response = await _api.get<List<dynamic>>('/companies/all');
+      
+      _allCompanies = response.data!.map<Map<String, dynamic>>((company) {
+        return {
+          'companyID': company['companyID'],
+          'companyName': company['companyName'] ?? 'Unknown Company',
+          'industry': company['industry'] ?? 'Not specified',
+          'website': company['website'],
+          'description': company['description'] ?? 'No description available',
+          'location': company['location'] ?? 'Location not specified',
+        };
+      }).toList();
+      
+      print('Successfully loaded ${_allCompanies.length} companies');
     } catch (e) {
-      error = 'Failed to load companies';
+      print('Error loading companies: $e');
+      error = 'Failed to load companies: $e';
     } finally {
       loading = false;
       notifyListeners();

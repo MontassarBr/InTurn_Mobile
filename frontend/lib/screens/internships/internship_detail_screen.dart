@@ -5,6 +5,7 @@ import '../../providers/internship_provider.dart';
 import '../../providers/application_provider.dart';
 import '../../providers/company_profile_provider.dart';
 import '../../models/internship.dart';
+import '../companies/company_detail_screen.dart';
 
 class InternshipDetailScreen extends StatefulWidget {
   final Internship internship;
@@ -60,16 +61,22 @@ class _InternshipDetailScreenState extends State<InternshipDetailScreen> {
     setState(() => _isApplying = true);
     
     try {
-      // TODO: Implement application logic
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      final applicationProvider = context.read<ApplicationProvider>();
+      final success = await applicationProvider.applyToInternship(widget.internship.internshipID);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Application submitted successfully!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(success 
+              ? 'Application submitted successfully!' 
+              : applicationProvider.error ?? 'Failed to apply'),
+            backgroundColor: success ? Colors.green : Colors.red,
           ),
         );
+        
+        if (success) {
+          Navigator.of(context).pop(); // Go back to internships list
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -114,20 +121,39 @@ class _AppBarSection extends StatelessWidget {
             children: [
               Positioned(
                 right: 16,
-                top: 16,
+                top: 50, // Moved down from 16 to 50 to avoid status bar
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                      onPressed: () {
-                        // Toggle bookmark
-                      },
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.bookmark_border, color: Colors.white),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Bookmark feature coming soon!')),
+                          );
+                        },
+                        tooltip: 'Save Internship',
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.share, color: Colors.white),
-                      onPressed: () {
-                        // Share internship
-                      },
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.share, color: Colors.white),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Share feature coming soon!')),
+                          );
+                        },
+                        tooltip: 'Share Internship',
+                      ),
                     ),
                   ],
                 ),
@@ -411,99 +437,217 @@ class _CompanySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'About the Company',
-          style: AppConstants.headingStyle.copyWith(fontSize: 18),
-        ),
-        const SizedBox(height: 12),
-        Consumer<CompanyProfileProvider>(
-          builder: (context, provider, _) {
-            // In a real app, you would fetch company details by internship.companyID
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+    return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section Header
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: AppConstants.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'C',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppConstants.primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Company Name',
-                              style: AppConstants.subheadingStyle.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Technology • 50-200 employees',
-                              style: AppConstants.bodyStyle.copyWith(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to company profile
-                        },
-                        child: const Text('View Company'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  Icon(Icons.business_outlined, color: AppConstants.primaryColor, size: 24),
+                  const SizedBox(width: 12),
                   Text(
-                    'We are a leading technology company focused on innovation and growth. Join our team to work on exciting projects and develop your skills.',
-                    style: AppConstants.bodyStyle.copyWith(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                    'About the Company',
+                    style: AppConstants.headingStyle.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  // Company Logo Circle
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppConstants.primaryColor.withOpacity(0.8),
+                          AppConstants.primaryColor.withOpacity(0.6),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppConstants.primaryColor.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        // Show first letter of company name or 'C' if no company name
+                        (internship.companyName != null && internship.companyName!.isNotEmpty)
+                            ? internship.companyName![0].toUpperCase()
+                            : 'C',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          internship.companyName ?? 'Company Name',
+                          style: AppConstants.subheadingStyle.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          internship.industry ?? 'Technology • Growing Company',
+                          style: AppConstants.bodyStyle.copyWith(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 18, color: AppConstants.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'About the Company',
+                          style: AppConstants.subheadingStyle.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _getCompanyDescription(internship),
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[700],
+                        height: 1.5,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => CompanyDetailScreen(
+                              company: {
+                                'id': internship.companyID,
+                                'companyName': internship.companyName ?? 'Company Name',
+                                'industry': internship.industry ?? 'Technology',
+                                'description': _getCompanyDescription(internship),
+                                // Add more company details as needed
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.business, size: 16),
+                      label: const Text('View Company'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppConstants.primaryColor,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+  }
+
+  String _getCompanyDescription(Internship internship) {
+    final companyName = internship.companyName ?? 'this company';
+    final industry = internship.industry ?? 'Technology';
+    
+    // Generate dynamic company descriptions based on industry and company name
+    final descriptions = {
+      'Technology': [
+        '$companyName is a forward-thinking technology company that specializes in cutting-edge software solutions. We foster innovation, embrace emerging technologies, and provide an environment where talented individuals can grow their careers in the tech industry.',
+        'As a leading technology firm, $companyName is dedicated to creating innovative solutions that drive digital transformation. Our team of experts works on challenging projects that make a real impact in the technology sector.',
+        '$companyName combines technical excellence with creative innovation to deliver world-class software products. We believe in empowering our team members with the tools and opportunities they need to succeed in their careers.',
       ],
-    );
+      'Healthcare': [
+        '$companyName is committed to improving healthcare outcomes through innovative solutions and dedicated service. We work at the intersection of healthcare and technology to create meaningful impact in people\'s lives.',
+        'At $companyName, we believe that quality healthcare should be accessible to everyone. Our team is passionate about developing solutions that enhance patient care and support healthcare professionals.',
+      ],
+      'Finance': [
+        '$companyName provides comprehensive financial services with a focus on innovation and customer satisfaction. We leverage cutting-edge technology to deliver secure, efficient financial solutions.',
+        'As a trusted financial institution, $companyName combines traditional banking values with modern fintech innovations to serve our clients better and create opportunities for professional growth.',
+      ],
+      'Education': [
+        '$companyName is dedicated to transforming education through innovative approaches and technology integration. We believe in empowering learners and educators with tools that enhance the educational experience.',
+        'At $companyName, we are passionate about education and committed to creating learning solutions that prepare students for future success. Our team works on projects that make education more accessible and engaging.',
+      ],
+    };
+
+    final industryDescriptions = descriptions[industry];
+    if (industryDescriptions != null && industryDescriptions.isNotEmpty) {
+      // Use a simple hash to consistently select the same description for the same company
+      final index = (companyName.hashCode % industryDescriptions.length).abs();
+      return industryDescriptions[index];
+    }
+
+    // Default description for unknown industries
+    return '$companyName is a dynamic and innovative company in the $industry sector. We are committed to excellence, innovation, and providing meaningful opportunities for professional growth. Our team works on exciting projects that make a real impact in our industry and beyond.';
   }
 }
 

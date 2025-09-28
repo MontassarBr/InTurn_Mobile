@@ -84,18 +84,28 @@ const updateInternshipHandler = async (req, res) => {
 const deleteInternshipHandler = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`Delete request for internship ID: ${id} by user: ${req.user.userID}`);
+    
     const internship = await Internship.getInternshipById(id);
 
-    if (!internship) return res.status(404).json({ message: "Internship not found" });
+    if (!internship) {
+      console.log(`Internship not found: ${id}`);
+      return res.status(404).json({ message: "Internship not found" });
+    }
+    
     if (req.user.userType !== 'Company' || internship.companyID !== req.user.userID) {
+      console.log(`Authorization failed: userType=${req.user.userType}, companyID=${internship.companyID}, userID=${req.user.userID}`);
       return res.status(403).json({ message: "You can only delete your own internships" });
     }
 
-    await Internship.deleteInternship(id);
-    res.json({ message: "Internship deleted" });
+    console.log(`Deleting internship: ${internship.title}`);
+    const result = await Internship.deleteInternship(id);
+    console.log(`Delete result:`, result);
+    
+    res.json({ message: "Internship deleted successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error('Error in deleteInternshipHandler:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 

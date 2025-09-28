@@ -5,6 +5,7 @@ import '../../providers/application_provider.dart';
 import '../../providers/internship_provider.dart';
 import '../../models/application.dart';
 import '../../models/internship.dart';
+import '../internships/internship_detail_screen.dart';
 
 class ApplicationsScreen extends StatefulWidget {
   const ApplicationsScreen({Key? key}) : super(key: key);
@@ -129,12 +130,8 @@ class _ApplicationsTab extends StatelessWidget {
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final application = filteredApplications[index];
-                          final internship = internshipProvider.internships
-                              .where((i) => i.internshipID == application.internshipID)
-                              .firstOrNull;
                           return _ApplicationCard(
                             application: application,
-                            internship: internship,
                           );
                         },
                       ),
@@ -201,11 +198,9 @@ class _FilterChips extends StatelessWidget {
 
 class _ApplicationCard extends StatelessWidget {
   final Application application;
-  final Internship? internship;
 
   const _ApplicationCard({
     required this.application,
-    this.internship,
   });
 
   @override
@@ -227,46 +222,148 @@ class _ApplicationCard extends StatelessWidget {
         statusIcon = Icons.schedule;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        // Get the internship provider to find the internship by ID
+        final internshipProvider = Provider.of<InternshipProvider>(context, listen: false);
+        
+        // Find the internship by ID
+        final internship = internshipProvider.internships.firstWhere(
+          (internship) => internship.internshipID == application.internshipID,
+          orElse: () => Internship(
+            internshipID: application.internshipID,
+            title: application.title ?? 'Unknown Internship',
+            description: '',
+            location: application.location ?? '',
+            status: '',
+            companyID: application.companyID ?? 0,
+            startDate: '',
+            endDate: '',
           ),
-        ],
-      ),
+        );
+        
+        // Navigate to internship detail screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => InternshipDetailScreen(internship: internship),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              // Company Logo Circle
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppConstants.primaryColor.withOpacity(0.8),
+                      AppConstants.primaryColor.withOpacity(0.6),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppConstants.primaryColor.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    // Show first letter of company name or 'C' if no company name
+                    (application.companyName != null && application.companyName!.isNotEmpty)
+                        ? application.companyName![0].toUpperCase()
+                        : 'C',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      internship?.title ?? 'Internship #${application.internshipID}',
+                      application.title ?? 'Internship #${application.internshipID}',
                       style: AppConstants.subheadingStyle.copyWith(
                         fontWeight: FontWeight.w600,
+                        fontSize: 16,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (internship != null) ...[
+                    if (application.companyName != null) ...[
                       const SizedBox(height: 4),
+                      Text(
+                        application.companyName!,
+                        style: AppConstants.bodyStyle.copyWith(
+                          color: AppConstants.primaryColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (application.location != null) ...[
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[600]),
                           const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              application.location!,
+                              style: AppConstants.bodyStyle.copyWith(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (application.minSalary != null && application.maxSalary != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on_outlined, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
                           Text(
-                            internship!.location,
+                            '\$${application.minSalary!.toInt()} - \$${application.maxSalary!.toInt()}',
                             style: AppConstants.bodyStyle.copyWith(
-                              color: Colors.grey[600],
+                              color: AppConstants.primaryColor,
                               fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -379,7 +476,9 @@ class _ApplicationCard extends StatelessWidget {
           ],
         ],
       ),
+    ),
     );
+  
   }
 
   String _formatDate(String dateString) {

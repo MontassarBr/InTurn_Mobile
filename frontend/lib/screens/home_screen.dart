@@ -5,6 +5,7 @@ import 'dashboard/student_dashboard.dart';
 import 'dashboard/company_dashboard.dart';
 import 'internships/internships_screen.dart';
 import 'applications/applications_screen.dart';
+import 'applications/company_applications_screen.dart';
 import 'companies/companies_screen.dart';
 import 'profile/profile_screen.dart';
 
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final pages = [
       _userType == AppConstants.studentType ? const StudentDashboard() : const CompanyDashboard(),
       const InternshipsScreen(),
-      const ApplicationsScreen(),
+      _userType == AppConstants.studentType ? const ApplicationsScreen() : const CompanyApplicationsScreen(),
       const CompaniesScreen(),
       ProfileScreen(userType: _userType),
     ];
