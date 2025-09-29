@@ -95,7 +95,7 @@ class StudentProfileProvider with ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      await _api.post('/students/experience', {
+      await _api.post('/students/proexperience', {
         'title': exp.title,
         'startDate': exp.startDate,
         'endDate': exp.endDate,
@@ -114,7 +114,7 @@ class StudentProfileProvider with ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      await _api.delete('/students/experience/$id');
+      await _api.delete('/students/proexperience/$id');
       await fetchProfile();
     } catch (_) {
       loading = false;

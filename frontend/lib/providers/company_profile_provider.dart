@@ -81,12 +81,18 @@ class CompanyProfileProvider extends ChangeNotifier {
   }
 
   void _loadMockProfile() {
-    companyName = 'Your Company';
-    website = 'https://yourcompany.com';
-    industry = 'Technology';
-    workDayStart = '09:00';
-    workDayEnd = '17:00';
-    benefits = ['Health Insurance', 'Flexible Hours', 'Remote Work', 'Professional Development'];
+    companyName = 'TechSolutions Tunisia';
+    website = 'https://techsolutions.tn';
+    industry = 'Technologie';
+    workDayStart = '08:30';
+    workDayEnd = '17:30';
+    benefits = [
+      'Assurance santé',
+      'Horaires flexibles',
+      'Télétravail',
+      'Développement professionnel',
+      'Tickets restaurant'
+    ];
     error = null;
   }
 

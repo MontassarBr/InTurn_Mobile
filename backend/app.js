@@ -7,6 +7,7 @@ const internshipRoutes = require("./routes/internshipRoutes");
 const applicationRoutes = require('./routes/applicationRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const savedInternshipRoutes = require('./routes/savedInternshipRoutes');
 dotenv.config();
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/internships", internshipRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/saved-internships', savedInternshipRoutes);
 // Debug middleware to log all requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);

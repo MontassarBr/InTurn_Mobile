@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/constants.dart';
 import '../../providers/internship_provider.dart';
 import '../../providers/application_provider.dart';
 import '../../providers/company_profile_provider.dart';
+import '../../providers/saved_internship_provider.dart';
 import '../../models/internship.dart';
 import '../companies/company_detail_screen.dart';
 
@@ -129,14 +131,40 @@ class _AppBarSection extends StatelessWidget {
                         color: Colors.black.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Bookmark feature coming soon!')),
+                      child: Consumer<SavedInternshipProvider>(
+                        builder: (context, savedProvider, _) {
+                          final isSaved = savedProvider.isInternshipSaved(internship.internshipID);
+                          return IconButton(
+                            icon: Icon(
+                              isSaved ? Icons.bookmark : Icons.bookmark_border,
+                              color: Colors.white,
+                            ),
+                            tooltip: isSaved ? 'Remove from saved' : 'Save internship',
+                            onPressed: () async {
+                              if (isSaved) {
+                                final success = await savedProvider.unsaveInternship(internship.internshipID);
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Internship removed from saved!'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                }
+                              } else {
+                                final success = await savedProvider.saveInternship(internship.internshipID);
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Internship saved!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
                           );
                         },
-                        tooltip: 'Save Internship',
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -664,6 +692,20 @@ class _ApplicationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hide application actions for Company accounts
+    final isCompany = () {
+      // We don't have direct access to SharedPreferences here; infer via provider or fallback to hiding when company tab is active.
+      // Simpler: check if Applications tab shows company applications by looking for ApplicationProvider? We'll instead fetch from SharedPreferences.
+      return false;
+    }();
+
+    // We'll guard the UI below by user type pulled from SharedPreferences asynchronously using FutureBuilder
+    // to avoid blocking rebuilds.
+    return FutureBuilder<String?>(
+      future: _getUserType(),
+      builder: (context, snapshot) {
+        final userType = snapshot.data;
+        final hideApply = userType == AppConstants.companyType;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -693,44 +735,58 @@ class _ApplicationSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isApplying ? null : () {
-                    // Show application form or navigate to application screen
-                    _showApplicationDialog(context);
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Apply Now'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppConstants.primaryColor,
-                    side: BorderSide(color: AppConstants.primaryColor),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+          if (!hideApply)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: isApplying ? null : () {
+                      _showApplicationDialog(context);
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Apply Now'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppConstants.primaryColor,
+                      side: BorderSide(color: AppConstants.primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: isApplying ? null : onApply,
-                  icon: isApplying 
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                  label: Text(isApplying ? 'Applying...' : 'Quick Apply'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppConstants.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: isApplying ? null : onApply,
+                    icon: isApplying 
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send),
+                    label: Text(isApplying ? 'Applying...' : 'Quick Apply'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
+              ],
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
               ),
-            ],
-          ),
+              child: Text(
+                'You are logged in as a company. Applying is available to students only.',
+                style: AppConstants.bodyStyle.copyWith(color: Colors.grey[600]),
+              ),
+            ),
           const SizedBox(height: 12),
           Text(
             'Application deadline: ${_formatDate(internship.endDate)}',
@@ -741,6 +797,8 @@ class _ApplicationSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+      },
     );
   }
 
@@ -775,4 +833,9 @@ class _ApplicationSection extends StatelessWidget {
       return dateString;
     }
   }
+}
+
+Future<String?> _getUserType() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(AppConstants.userTypeKey);
 }

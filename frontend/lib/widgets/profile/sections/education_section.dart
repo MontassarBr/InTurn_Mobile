@@ -37,22 +37,66 @@ class _EducationSectionState extends State<EducationSection> {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<StudentProfileProvider>();
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.school_outlined, size: 20, color: AppConstants.primaryColor),
-                const SizedBox(width: 8),
-                const Text('Education', style: AppConstants.subheadingStyle),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.school_outlined,
+                    size: 24,
+                    color: AppConstants.primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Education',
+                  style: AppConstants.subheadingStyle.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                if (widget.isOwner)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${widget.education.length} items',
+                      style: TextStyle(
+                        color: AppConstants.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
               ],
             ),
-            const Divider(),
+            const SizedBox(height: 16),
             if (widget.isOwner) ...[
               const SizedBox(height: 8),
               Container(
@@ -105,11 +149,13 @@ class _EducationSectionState extends State<EducationSection> {
                           final dip = diplomaCtrl.text.trim();
                           final loc = locationCtrl.text.trim();
                           if (inst.isNotEmpty && dip.isNotEmpty) {
+                            final now = DateTime.now();
+                            final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-01'; // Full date format
                             provider.addEducation(Education(
                               institution: inst, 
                               diploma: dip, 
                               location: loc.isEmpty ? null : loc,
-                              startDate: DateTime.now().toString()
+                              startDate: formattedDate
                             ));
                             institutionCtrl.clear();
                             diplomaCtrl.clear();
@@ -157,18 +203,129 @@ class _EducationTile extends StatelessWidget {
   final Education edu;
   final StudentProfileProvider provider;
   const _EducationTile({required this.edu, required this.isOwner, required this.provider});
+  
+  String _formatDate(String dateStr) {
+    try {
+      if (dateStr.contains('-')) {
+        final parts = dateStr.split('-');
+        if (parts.length >= 2) {
+          final year = parts[0];
+          final month = int.parse(parts[1]);
+          final monthNames = [
+            '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+          if (month >= 1 && month <= 12) {
+            return '${monthNames[month]} $year';
+          }
+        }
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.school_outlined, color: AppConstants.primaryColor),
-      title: Text(edu.institution),
-      subtitle: Text('${edu.diploma}${edu.location != null ? ' • ${edu.location}' : ''}\n${edu.startDate} - ${edu.endDate ?? 'Present'}'),
-      trailing: isOwner
-          ? IconButton(
-              icon: const Icon(Icons.delete_outline),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppConstants.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.school_outlined,
+              color: AppConstants.primaryColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  edu.institution,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  edu.diploma,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppConstants.primaryColor,
+                  ),
+                ),
+                if (edu.location != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        edu.location!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${_formatDate(edu.startDate)} - ${edu.endDate != null ? _formatDate(edu.endDate!) : 'Present'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (isOwner)
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: Colors.red[400],
+                size: 20,
+              ),
               onPressed: () => provider.deleteEducation(edu.institution, edu.diploma),
-            )
-          : null,
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+        ],
+      ),
     );
   }
 }

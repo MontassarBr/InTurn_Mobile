@@ -4,6 +4,7 @@ import '../../utils/constants.dart';
 import '../../providers/application_provider.dart';
 import '../../providers/internship_provider.dart';
 import '../../providers/student_profile_provider.dart';
+import '../../providers/saved_internship_provider.dart';
 import '../../models/application.dart';
 import '../../models/internship.dart';
 import '../internships/internship_detail_screen.dart';
@@ -22,6 +23,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       context.read<ApplicationProvider>().fetchMyApplications();
       context.read<InternshipProvider>().fetchInternships();
       context.read<StudentProfileProvider>().fetchProfile();
+      context.read<SavedInternshipProvider>().fetchSavedInternships();
     });
   }
 
@@ -33,13 +35,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
         backgroundColor: AppConstants.primaryColor,
         elevation: 0,
       ),
-      body: Consumer3<ApplicationProvider, InternshipProvider, StudentProfileProvider>(
-        builder: (context, appProvider, internshipProvider, profileProvider, _) {
+      body: Consumer4<ApplicationProvider, InternshipProvider, StudentProfileProvider, SavedInternshipProvider>(
+        builder: (context, appProvider, internshipProvider, profileProvider, savedProvider, _) {
           return RefreshIndicator(
             onRefresh: () async {
               await Future.wait([
                 appProvider.fetchMyApplications(),
                 internshipProvider.fetchInternships(),
+                savedProvider.fetchSavedInternships(),
               ]);
             },
             child: SingleChildScrollView(
@@ -50,7 +53,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 children: [
                   _WelcomeSection(profileProvider: profileProvider),
                   const SizedBox(height: 24),
-                  _StatsSection(appProvider: appProvider),
+                  _StatsSection(appProvider: appProvider, savedProvider: savedProvider),
                   const SizedBox(height: 24),
                   _RecentApplicationsSection(appProvider: appProvider),
                   const SizedBox(height: 24),
@@ -120,15 +123,17 @@ class _WelcomeSection extends StatelessWidget {
 
 class _StatsSection extends StatelessWidget {
   final ApplicationProvider appProvider;
+  final SavedInternshipProvider savedProvider;
   
-  const _StatsSection({required this.appProvider});
+  const _StatsSection({required this.appProvider, required this.savedProvider});
 
   @override
   Widget build(BuildContext context) {
     final applications = appProvider.applications;
-    final pendingCount = applications.where((app) => app.status == 'pending').length;
-    final acceptedCount = applications.where((app) => app.status == 'accepted').length;
-    final rejectedCount = applications.where((app) => app.status == 'rejected').length;
+    final savedInternships = savedProvider.savedInternships;
+    final pendingCount = applications.where((app) => app.status.toLowerCase() == 'pending').length;
+    final acceptedCount = applications.where((app) => app.status.toLowerCase() == 'accepted').length;
+    final rejectedCount = applications.where((app) => app.status.toLowerCase() == 'rejected').length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,14 +143,23 @@ class _StatsSection extends StatelessWidget {
           style: AppConstants.headingStyle.copyWith(fontSize: 20),
         ),
         const SizedBox(height: 16),
+        // Total Applications - Full Width
+        _StatCard(
+          title: 'Total Applications',
+          value: applications.length.toString(),
+          icon: Icons.assignment_outlined,
+          color: AppConstants.primaryColor,
+        ),
+        const SizedBox(height: 12),
+        // Other stats in 2x2 grid
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                title: 'Total Applications',
-                value: applications.length.toString(),
-                icon: Icons.assignment_outlined,
-                color: AppConstants.primaryColor,
+                title: 'Saved Internships',
+                value: savedInternships.length.toString(),
+                icon: Icons.bookmark_outlined,
+                color: AppConstants.accentColor,
               ),
             ),
             const SizedBox(width: 12),

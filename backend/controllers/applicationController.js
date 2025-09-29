@@ -149,9 +149,7 @@ const getCompanyApplicationsPublicHandler = async (req, res) => {
       FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_NAME = 'Application' AND COLUMN_NAME = 'applicationDate'
     `);
-    console.log(`ApplicationDate column info:`, columnInfo);
-    
-    console.log(`=== END DEBUG INFO ===\n`);
+  
 
     const applications = await Application.getApplicationsByCompany(parseInt(companyID));
     console.log(`Found ${applications.length} applications for company ${companyID}`);

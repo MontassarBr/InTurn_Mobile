@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
-import '../../providers/company_profile_provider.dart';
 import '../../providers/internship_provider.dart';
+import '../../providers/company_profile_provider.dart';
+import '../../providers/application_provider.dart';
+import '../../models/internship.dart';
+import '../internships/internship_detail_screen.dart';
 
 class CompanyDetailScreen extends StatefulWidget {
   final Map<String, dynamic> company;
@@ -1017,9 +1020,10 @@ class _InternshipCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    // Navigate to internship details
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('View details feature coming soon!')),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => InternshipDetailScreen(internship: internship),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.info_outline, size: 18),
@@ -1037,14 +1041,49 @@ class _InternshipCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Apply to internship
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Applied to ${internship.title ?? 'internship'}!'),
-                        backgroundColor: Colors.green,
+                  onPressed: () async {
+                    // Show loading dialog
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
                       ),
                     );
+
+                    try {
+                      final applicationProvider = context.read<ApplicationProvider>();
+                      final success = await applicationProvider.applyToInternship(internship.internshipID);
+                      
+                      // Close loading dialog
+                      Navigator.of(context).pop();
+                      
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Application submitted successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(applicationProvider.error ?? 'Failed to apply'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      // Close loading dialog
+                      Navigator.of(context).pop();
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to apply: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.send, size: 18),
                   label: const Text('Apply'),

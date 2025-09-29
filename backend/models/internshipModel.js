@@ -79,16 +79,37 @@ const updateInternship = async (id, data) => {
   return result;
 };
 
-// Delete internship and related applications
+// Delete internship and related applications and saved internships
 const deleteInternship = async (id) => {
-  // First delete all applications for this internship
-  const deleteApplicationsSql = `DELETE FROM Application WHERE internshipID = ?`;
-  await pool.query(deleteApplicationsSql, [id]);
+  const connection = await pool.getConnection();
   
-  // Then delete the internship itself
-  const deleteInternshipSql = `DELETE FROM Internship WHERE internshipID = ?`;
-  const [result] = await pool.query(deleteInternshipSql, [id]);
-  return result;
+  try {
+    // Start transaction
+    await connection.beginTransaction();
+    
+    // First delete all saved internships for this internship
+    const deleteSavedInternshipsSql = `DELETE FROM SavedInternship WHERE internshipID = ?`;
+    await connection.query(deleteSavedInternshipsSql, [id]);
+    
+    // Then delete all applications for this internship
+    const deleteApplicationsSql = `DELETE FROM Application WHERE internshipID = ?`;
+    await connection.query(deleteApplicationsSql, [id]);
+    
+    // Finally delete the internship itself
+    const deleteInternshipSql = `DELETE FROM Internship WHERE internshipID = ?`;
+    const [result] = await connection.query(deleteInternshipSql, [id]);
+    
+    // Commit transaction
+    await connection.commit();
+    return result;
+  } catch (error) {
+    // Rollback transaction on error
+    await connection.rollback();
+    throw error;
+  } finally {
+    // Release connection
+    connection.release();
+  }
 };
 
 module.exports = {

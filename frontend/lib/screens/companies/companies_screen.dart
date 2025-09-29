@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../providers/company_profile_provider.dart';
 import 'company_detail_screen.dart';
+import 'company_internships_screen.dart';
 
 class CompaniesScreen extends StatefulWidget {
   const CompaniesScreen({Key? key}) : super(key: key);
@@ -430,9 +431,10 @@ class _CompanyCard extends StatelessWidget {
   }
 
   void _viewCompanyInternships(BuildContext context) {
-    // Navigate to company's internships
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Company internships feature coming soon!')),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CompanyInternshipsScreen(company: company),
+      ),
     );
   }
 

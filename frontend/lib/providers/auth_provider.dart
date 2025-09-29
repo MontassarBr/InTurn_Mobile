@@ -45,7 +45,14 @@ class AuthProvider with ChangeNotifier {
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      _errorMessage = 'Login failed. ${e.toString()}';
+      final message = e.toString();
+      if (message.contains('401') || message.toLowerCase().contains('invalid') || message.toLowerCase().contains('unauthorized')) {
+        _errorMessage = 'Invalid email or password. Please try again.';
+      } else if (message.contains('Connection')) {
+        _errorMessage = 'Cannot reach server. Check your internet connection.';
+      } else {
+        _errorMessage = 'Login failed. Please try again.';
+      }
       _setStatus(AuthStatus.error);
     }
   }

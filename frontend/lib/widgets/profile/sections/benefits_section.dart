@@ -42,7 +42,16 @@ class _BenefitsSectionState extends State<BenefitsSection> {
               children: [
                 const Icon(Icons.card_giftcard_outlined, size: 20, color: AppConstants.primaryColor),
                 const SizedBox(width: 8),
-                const Text('Benefits', style: AppConstants.subheadingStyle),
+                Text('Benefits', style: AppConstants.subheadingStyle.copyWith(fontWeight: FontWeight.w600)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('${benefits.length} listed', style: TextStyle(color: AppConstants.primaryColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
             const Divider(),
@@ -61,7 +70,7 @@ class _BenefitsSectionState extends State<BenefitsSection> {
                       child: TextField(
                         controller: addController,
                         decoration: const InputDecoration(
-                          hintText: 'Add a new benefit...',
+                          hintText: 'Add a new benefit (e.g., Health insurance)...',
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                         ),
@@ -100,22 +109,57 @@ class _BenefitsSectionState extends State<BenefitsSection> {
                       ),
                     ),
                   )
-                : Column(
+                : Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: benefits
-                        .map((benefit) => ListTile(
-                              leading: const Icon(Icons.check_circle_outline, color: AppConstants.primaryColor),
-                              title: Text(benefit),
-                              trailing: widget.isOwner
-                                  ? IconButton(
-                                      icon: const Icon(Icons.delete_outline),
-                                      onPressed: () => provider.deleteBenefit(benefit),
-                                    )
-                                  : null,
+                        .map((benefit) => _BenefitChip(
+                              label: benefit,
+                              isOwner: widget.isOwner,
+                              onDelete: () => provider.deleteBenefit(benefit),
                             ))
                         .toList(),
                   ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BenefitChip extends StatelessWidget {
+  final String label;
+  final bool isOwner;
+  final VoidCallback onDelete;
+
+  const _BenefitChip({required this.label, required this.isOwner, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppConstants.primaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppConstants.primaryColor.withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle_outline, size: 16, color: AppConstants.primaryColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(color: AppConstants.primaryColor, fontWeight: FontWeight.w600, fontSize: 12),
+          ),
+          if (isOwner) ...[
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: onDelete,
+              child: Icon(Icons.close, size: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ],
       ),
     );
   }

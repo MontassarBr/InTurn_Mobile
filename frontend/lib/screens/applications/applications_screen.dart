@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../../providers/application_provider.dart';
 import '../../providers/internship_provider.dart';
+import '../../providers/saved_internship_provider.dart';
 import '../../models/application.dart';
 import '../../models/internship.dart';
+import '../../models/saved_internship.dart';
 import '../internships/internship_detail_screen.dart';
+import '../internships/internships_screen.dart';
 
 class ApplicationsScreen extends StatefulWidget {
   const ApplicationsScreen({Key? key}) : super(key: key);
@@ -26,6 +29,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> with TickerProv
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ApplicationProvider>().fetchMyApplications();
       context.read<InternshipProvider>().fetchInternships();
+      context.read<SavedInternshipProvider>().fetchSavedInternships();
     });
   }
 
@@ -529,8 +533,12 @@ class _EmptyApplicationsState extends StatelessWidget {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Navigate to internships screen
-                  DefaultTabController.of(context)?.animateTo(1);
+                  // Navigate to internships screen using Navigator
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const InternshipsScreen(),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.search),
                 label: const Text('Browse Internships'),
@@ -591,6 +599,75 @@ class _SavedTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<SavedInternshipProvider>(
+      builder: (context, provider, _) {
+        if (provider.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  provider.error!,
+                  style: AppConstants.subheadingStyle.copyWith(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.fetchSavedInternships(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final savedInternships = provider.savedInternships;
+
+        return savedInternships.isEmpty
+            ? _EmptySavedState()
+            : RefreshIndicator(
+                onRefresh: () => provider.fetchSavedInternships(),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: savedInternships.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final saved = savedInternships[index];
+                    return _SavedInternshipCard(
+                      savedInternship: saved,
+                      onTap: () {
+                        if (saved.internship != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => InternshipDetailScreen(
+                                internship: saved.internship!,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      onUnsave: () async {
+                        await provider.unsaveInternship(saved.internshipID);
+                      },
+                    );
+                  },
+                ),
+              );
+      },
+    );
+  }
+}
+
+class _EmptySavedState extends StatelessWidget {
+  const _EmptySavedState();
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -621,8 +698,12 @@ class _SavedTab extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                // Navigate to internships screen
-                DefaultTabController.of(context)?.animateTo(1);
+                // Navigate to internships screen using Navigator
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const InternshipsScreen(),
+                  ),
+                );
               },
               icon: const Icon(Icons.search),
               label: const Text('Browse Internships'),
@@ -632,6 +713,177 @@ class _SavedTab extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedInternshipCard extends StatelessWidget {
+  final SavedInternship savedInternship;
+  final VoidCallback onTap;
+  final VoidCallback onUnsave;
+
+  const _SavedInternshipCard({
+    required this.savedInternship,
+    required this.onTap,
+    required this.onUnsave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final internship = savedInternship.internship;
+    if (internship == null) return const SizedBox();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Company Logo Circle
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppConstants.primaryColor.withOpacity(0.8),
+                          AppConstants.primaryColor.withOpacity(0.6),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppConstants.primaryColor.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        (internship.companyName != null && internship.companyName!.isNotEmpty)
+                            ? internship.companyName![0].toUpperCase()
+                            : 'C',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          internship.title,
+                          style: AppConstants.subheadingStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (internship.companyName != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            internship.companyName!,
+                            style: AppConstants.bodyStyle.copyWith(
+                              color: AppConstants.primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onUnsave,
+                    icon: const Icon(Icons.bookmark, color: Colors.red),
+                    tooltip: 'Remove from saved',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // Location and Work Arrangement
+              Row(
+                children: [
+                  Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      internship.location,
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (internship.workArrangement != null) ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.work_outline, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      internship.workArrangement!,
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              
+              // Salary
+              if (internship.minSalary != null && internship.maxSalary != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.monetization_on_outlined, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '\$${internship.minSalary!.toInt()} - \$${internship.maxSalary!.toInt()}',
+                      style: AppConstants.bodyStyle.copyWith(
+                        color: AppConstants.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

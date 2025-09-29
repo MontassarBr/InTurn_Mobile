@@ -9,6 +9,9 @@ import '../../models/application.dart';
 import '../../models/internship.dart';
 import '../internships/create_internship_screen.dart';
 import '../applications/company_applications_screen.dart';
+import '../profile/profile_screen.dart';
+import '../analytics/company_analytics_screen.dart';
+import '../internships/internship_detail_screen.dart';
 
 class CompanyDashboard extends StatefulWidget {
   const CompanyDashboard({Key? key}) : super(key: key);
@@ -166,7 +169,7 @@ class _WelcomeSection extends StatelessWidget {
   }
 }
 
-class _StatsSection extends StatelessWidget {
+class _StatsSection extends StatefulWidget {
   final InternshipProvider internshipProvider;
   final ApplicationProvider applicationProvider;
   
@@ -176,17 +179,48 @@ class _StatsSection extends StatelessWidget {
   });
 
   @override
+  State<_StatsSection> createState() => _StatsSectionState();
+}
+
+class _StatsSectionState extends State<_StatsSection> {
+  int? _companyId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanyId();
+  }
+
+  Future<void> _loadCompanyId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final companyIdStr = prefs.getString(AppConstants.userIdKey);
+    final userType = prefs.getString(AppConstants.userTypeKey);
+    
+    if (companyIdStr != null && userType == AppConstants.companyType) {
+      setState(() {
+        _companyId = int.parse(companyIdStr);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final internships = internshipProvider.internships;
+    // Filter internships by company ID
+    final allInternships = widget.internshipProvider.internships;
+    final internships = _companyId != null
+        ? allInternships.where((internship) => internship.companyID == _companyId).toList()
+        : allInternships;
+    
     final publishedInternships = internships.where((internship) => 
         internship.status == 'Published' || internship.status == 'published').length;
     
-    final applications = applicationProvider.applications;
+    // Applications are already filtered by company ID in _loadCompanyApplications()
+    final applications = widget.applicationProvider.applications;
     final totalApplications = applications.length;
     final pendingApplications = applications.where((app) => app.status == 'Pending').length;
     
     // Show loading indicator if data is still being fetched
-    final isLoading = internshipProvider.loading || applicationProvider.loading;
+    final isLoading = widget.internshipProvider.loading || widget.applicationProvider.loading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,7 +349,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _RecentInternshipsSection extends StatelessWidget {
+class _RecentInternshipsSection extends StatefulWidget {
   final InternshipProvider internshipProvider;
   final VoidCallback onCreateInternship;
   
@@ -325,8 +359,34 @@ class _RecentInternshipsSection extends StatelessWidget {
   });
 
   @override
+  State<_RecentInternshipsSection> createState() => _RecentInternshipsSectionState();
+}
+
+class _RecentInternshipsSectionState extends State<_RecentInternshipsSection> {
+  int? _companyId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanyId();
+  }
+
+  Future<void> _loadCompanyId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final idStr = prefs.getString(AppConstants.userIdKey);
+    final userType = prefs.getString(AppConstants.userTypeKey);
+    if (idStr != null && userType == AppConstants.companyType) {
+      if (mounted) setState(() => _companyId = int.parse(idStr));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final recentInternships = internshipProvider.internships.take(3).toList();
+    final all = widget.internshipProvider.internships;
+    final filtered = _companyId == null
+        ? all
+        : all.where((i) => i.companyID == _companyId).toList();
+    final recentInternships = filtered.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +398,7 @@ class _RecentInternshipsSection extends StatelessWidget {
               'Your Internships',
               style: AppConstants.headingStyle.copyWith(fontSize: 20),
             ),
-            if (internshipProvider.internships.length > 3)
+            if (filtered.length > 3)
               TextButton(
                 onPressed: () {
                   // Navigate to internships screen
@@ -382,7 +442,7 @@ class _RecentInternshipsSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: onCreateInternship,
+                  onPressed: widget.onCreateInternship,
                   icon: const Icon(Icons.add),
                   label: const Text('Create Internship'),
                   style: ElevatedButton.styleFrom(
@@ -394,7 +454,16 @@ class _RecentInternshipsSection extends StatelessWidget {
             ),
           )
         else
-          ...recentInternships.map((internship) => _InternshipCard(internship: internship)),
+          ...recentInternships.map((internship) => GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => InternshipDetailScreen(internship: internship),
+                    ),
+                  );
+                },
+                child: _InternshipCard(internship: internship),
+              )),
       ],
     );
   }
@@ -736,8 +805,11 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.business_outlined,
                 color: Colors.green,
                 onTap: () {
-                  // Navigate to profile
-                  DefaultTabController.of(context)?.animateTo(4);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(userType: AppConstants.companyType),
+                    ),
+                  );
                 },
               ),
             ),
@@ -749,7 +821,11 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.analytics_outlined,
                 color: Colors.purple,
                 onTap: () {
-                  // Navigate to analytics
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CompanyAnalyticsScreen(),
+                    ),
+                  );
                 },
               ),
             ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/constants.dart';
 import '../../models/internship.dart';
 import 'package:provider/provider.dart';
 import '../../providers/internship_provider.dart';
 import '../../providers/application_provider.dart';
+import '../../providers/saved_internship_provider.dart';
 import 'internship_detail_screen.dart';
 
 class InternshipsScreen extends StatefulWidget {
@@ -418,6 +420,36 @@ class _InternshipCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    // Bookmark button (only for students)
+                    FutureBuilder<String?>(
+                      future: _getUserType(),
+                      builder: (context, snapshot) {
+                        final userType = snapshot.data;
+                        if (userType != AppConstants.studentType) {
+                          return const SizedBox.shrink(); // Hide for companies
+                        }
+                        
+                        return Consumer<SavedInternshipProvider>(
+                          builder: (context, savedProvider, _) {
+                            final isSaved = savedProvider.isInternshipSaved(internship.internshipID);
+                            return IconButton(
+                              icon: Icon(
+                                isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                color: isSaved ? AppConstants.primaryColor : Colors.grey[400],
+                              ),
+                              onPressed: () async {
+                                if (isSaved) {
+                                  await savedProvider.unsaveInternship(internship.internshipID);
+                                } else {
+                                  await savedProvider.saveInternship(internship.internshipID);
+                                }
+                              },
+                              tooltip: isSaved ? 'Remove from saved' : 'Save internship',
+                            );
+                          },
+                        );
+                      },
+                    ),
                     if (hasApplied)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -527,4 +559,10 @@ class _InternshipCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// Helper function to get user type
+Future<String?> _getUserType() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(AppConstants.userTypeKey);
 }

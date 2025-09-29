@@ -9,6 +9,7 @@ import 'providers/application_provider.dart';
 import 'providers/company_profile_provider.dart';
 import 'providers/student_profile_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/saved_internship_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/splash_screen.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ApplicationProvider()),
         ChangeNotifierProvider(create: (_) => CompanyProfileProvider()),
         ChangeNotifierProvider(create: (_) => StudentProfileProvider()),
+        ChangeNotifierProvider(create: (_) => SavedInternshipProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -42,6 +44,7 @@ class MyApp extends StatelessWidget {
           '/home': (_) => const HomeScreen(),
         },
       ),
+      
     );
   }
 }
