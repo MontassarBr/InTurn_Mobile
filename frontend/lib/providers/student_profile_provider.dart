@@ -95,7 +95,7 @@ class StudentProfileProvider with ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      await _api.post('/students/proexperience', {
+      await _api.post('/students/experience', {
         'title': exp.title,
         'startDate': exp.startDate,
         'endDate': exp.endDate,
@@ -104,7 +104,8 @@ class StudentProfileProvider with ChangeNotifier {
         'description': exp.description,
       });
       await fetchProfile();
-    } catch (_) {
+    } catch (e) {
+      print('Error adding experience: $e'); // Debug log
       loading = false;
       notifyListeners();
     }
@@ -114,9 +115,10 @@ class StudentProfileProvider with ChangeNotifier {
     loading = true;
     notifyListeners();
     try {
-      await _api.delete('/students/proexperience/$id');
+      await _api.delete('/students/experience/$id');
       await fetchProfile();
-    } catch (_) {
+    } catch (e) {
+      print('Error deleting experience: $e'); // Debug log
       loading = false;
       notifyListeners();
     }

@@ -136,13 +136,13 @@ class _ExperienceSectionState extends State<ExperienceSection> {
                           final t = titleCtrl.text.trim();
                           final c = companyCtrl.text.trim();
                           if (t.isNotEmpty && c.isNotEmpty) {
-                             final now = DateTime.now();
+                            final now = DateTime.now();
                             final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
                             provider.addExperience(Experience(
                               title: t, 
                               companyName: c, 
                               startDate: formattedDate, 
-                              endDate: '', 
+                              endDate: formattedDate, // Using same date as start date to avoid MySQL error
                               employmentType: 'full time', 
                               experienceID: 0, // Backend will generate auto-increment ID
                             ));
