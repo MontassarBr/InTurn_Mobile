@@ -24,27 +24,21 @@ Built with **Flutter** for the frontend and **Node.js/Express** for the backend,
 
 Here are some previews of **InTurn**:
 
-<p align="center">
   <img src="screenshots/screenshot1.png" width="20%" />
   <img src="screenshots/screenshot2.png" width="20%" />
   <img src="screenshots/screenshot3.png" width="20%" />
   <img src="screenshots/screenshot4.png" width="20%" />
   <img src="screenshots/screenshot5.png" width="20%" />
-</p>
-<p align="center">
  <img src="screenshots/screenshot6.png" width="20%" />
   <img src="screenshots/screenshot7.png" width="20%" />
   <img src="screenshots/screenshot8.png" width="20%" />
   <img src="screenshots/screenshot9.png" width="20%" />
   <img src="screenshots/screenshot10.png" width="20%" />
-</p>
-<p align="center">
  <img src="screenshots/screenshot11.png" width="20%" />
   <img src="screenshots/screenshot12.png" width="20%" />
   <img src="screenshots/screenshot13.png" width="20%" />
   <img src="screenshots/screenshot14.png" width="20%" />
   <img src="screenshots/screenshot15.png" width="20%" />
-</p>
 
 👉 More screenshots are available in the **`screenshots`** folder.
 
@@ -111,6 +105,7 @@ This project was built **solo** by:
 ## 📜 Copyright
 
 © **2025 Montassar Braiek**. All rights reserved.
+
 
 
 
